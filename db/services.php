@@ -21,13 +21,25 @@ $functions = array(
         'classpath' => 'local/ws_association_online/externallib.php',
         'description' => 'Returns users with a specific custom field value',
         'type' => 'read'
+    ),
+    'local_ws_association_online_create_users_from_ao' => array(
+        'classname' => 'local_ws_association_online_external',
+        'methodname' => 'create_users_from_ao',
+        'classpath' => 'local/ws_association_online/externallib.php',
+        'description' => 'Creates the specified users (but ignores the unique email constraint)',
+        'type' => 'read'
     )
 );
 
 // We define the services to install as pre-build services. A pre-build service is not editable by administrator.
 $services = array(
     'Web service completion' => array(
-        'functions' => array('local_ws_association_online_get_for_course', 'local_ws_association_online_get_roles', 'local_ws_assocation_online_get_user_by_custom_field_value'),
+        'functions' => array(
+            'local_ws_association_online_get_for_course',
+            'local_ws_association_online_get_roles',
+            'local_ws_assocation_online_get_user_by_custom_field_value',
+            'local_ws_assocation_online_create_users_from_ao'
+        ),
         'restrictedusers' => 0,
         'enabled' => 1,
     )

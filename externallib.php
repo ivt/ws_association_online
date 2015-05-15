@@ -1,7 +1,8 @@
 <?php
 
 require_once($CFG->libdir . "/externallib.php");
-require_once($CFG->libdir . '/../config.php');
+require_once($CFG->dirroot . "/user/externallib.php");
+require_once($CFG->dirroot . "/config.php");
 require_once($CFG->libdir . "/completionlib.php");
 
 class local_ws_association_online_external extends external_api
@@ -177,4 +178,70 @@ class local_ws_association_online_external extends external_api
             )
         );
     }
+
+    /** ************************** CREATE USER ************************** **/
+
+    public static function create_users_from_ao_parameters() {
+        return core_user_external::create_users_parameters();
+    }
+
+    /**
+     * Delegates to core_user_external::create_users(), but randomises emails before doing so.
+     * Then, after invoking create_users(), it will restore the actual emails from $usersToCreate.
+     *
+     * While not ideal, the alternative would be to copy and paste create_users() and then change
+     * the one line which was causing trouble.
+     *
+     * @param array $usersToCreate
+     * @return array
+     * @throws invalid_parameter_exception
+     * @throws moodle_exception
+     */
+    public static function create_users_from_ao($usersToCreate) {
+
+        // Make emails random so they shouldn't conflict with others...
+        $safeEmailUsersToCreate = array();
+        foreach( $usersToCreate as $user ) {
+            $user['email']            = random_string(20) . "-" . $user['email'];
+            $safeEmailUsersToCreate[] = $user;
+        }
+
+        $ids = core_user_external::create_users($safeEmailUsersToCreate);
+
+        // Overwrite the random emails created above with the original emails...
+        foreach( $usersToCreate as $user ) {
+            $id = null;
+            foreach( $ids as $savedData ) {
+                if ( $savedData[ 'username' ] == $user[ 'username' ] ) {
+                    $id = $savedData[ 'id' ];
+                    break;
+                }
+            }
+
+            if ( $id == null )
+            {
+                throw new invalid_state_exception( "User did not save correctly." );
+            }
+
+            $userObj = new stdClass();
+            $userObj->id = $id;
+            $userObj->email = $user[ 'email' ];
+
+            user_update_user( $userObj, false, false );
+        }
+
+        return $ids;
+
+    }
+
+    /**
+     * Returns description of method result value
+     *
+     * @return external_description
+     * @since Moodle 2.2
+     */
+    public static function create_users_from_ao_returns() {
+        return core_user_external::create_users_returns();
+    }
+
 }
